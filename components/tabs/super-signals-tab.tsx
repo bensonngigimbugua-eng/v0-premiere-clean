@@ -517,7 +517,7 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
           Market Overview
         </h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {totalMarkets.filter(m => selectedMarkets.length === 0 || selectedMarkets.includes(m.symbol)).map((market) => {
+          {totalMarkets.filter(m => selectedMarkets.length === 0 || selectedMarkets.includes(m.symbol)).map((market) => {
           const hasSignal =
             market.analysis.under.signal === "TRADE NOW" ||
             market.analysis.over.signal === "TRADE NOW" ||
@@ -736,9 +736,9 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
                         </span>
                         <div className={`text-xl font-bold ${textColors[signal.category]}`}>{signal.confidence}%</div>
                       </div>
-            </div>
-          )
-        })}
+                    </div>
+                  )
+                })}
         </div>
       </div>
     </div>
