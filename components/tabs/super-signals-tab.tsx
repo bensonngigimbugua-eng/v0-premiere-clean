@@ -518,15 +518,15 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
         </h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {totalMarkets.filter(m => selectedMarkets.length === 0 || selectedMarkets.includes(m.symbol)).map((market) => {
-          const hasSignal =
+            const hasSignal =
             market.analysis.under.signal === "TRADE NOW" ||
             market.analysis.over.signal === "TRADE NOW" ||
             market.analysis.even.signal === "TRADE NOW" ||
             market.analysis.odd.signal === "TRADE NOW" ||
             market.analysis.differs.signal === "TRADE NOW"
 
-          return (
-            <Card
+            return (
+              <Card
               key={market.symbol}
               className={`p-4 border-2 ${
                 hasSignal
@@ -739,6 +739,9 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
                     </div>
                   )
                 })}
+            </Card>
+            )
+          })}
         </div>
       </div>
     </div>
