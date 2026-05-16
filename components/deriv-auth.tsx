@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { ApprovalModal } from "@/components/approval-modal"
-import { ApiTokenModal } from "@/components/api-token-modal"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User, Settings, LogIn, LogOut, UserPlus } from "lucide-react"
 
@@ -27,9 +26,6 @@ export function DerivAuth({ theme = "dark" }: DerivAuthProps) {
     accounts,
     switchAccount,
     activeLoginId,
-    showTokenModal,
-    submitApiToken,
-    openTokenSettings,
   } = useDerivAuth()
 
   const openDerivAccount = () => {
@@ -43,7 +39,6 @@ export function DerivAuth({ theme = "dark" }: DerivAuthProps) {
   return (
     <>
       <ApprovalModal open={showApprovalModal} onApprove={handleApproval} onCancel={cancelApproval} />
-      <ApiTokenModal open={showTokenModal} onSubmit={submitApiToken} theme={theme} />
 
       {!isLoggedIn && (
         <div className="flex items-center gap-2">
@@ -140,19 +135,7 @@ export function DerivAuth({ theme = "dark" }: DerivAuthProps) {
             )}
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={openTokenSettings}
-            className={`h-9 w-9 ${
-              theme === "dark"
-                ? "text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
-                : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
-            }`}
-            title="Change API Token"
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
+
 
           <Avatar
             className="cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all w-9 h-9"
