@@ -6,8 +6,14 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Activity, Zap, X, Eye, Power } from 'lucide-react'
+import { Activity, Zap, X, Eye, Power, AlertCircle } from 'lucide-react'
 import { derivWebSocket } from "@/lib/deriv-websocket-manager"
+import { 
+  getMarketConfig, 
+  formatPriceForMarket, 
+  extractLastDigitFromPrice,
+  getAllMarketSymbols 
+} from "@/lib/market-pip-sizes"
 
 interface MarketData {
   symbol: string
@@ -15,6 +21,8 @@ interface MarketData {
   currentPrice: number
   lastDigit: number
   last100Digits: number[]
+  pipSize: number
+  decimalPlaces: number
   analysis: {
     under: { count: number; percentage: number; signal: "WAIT" | "TRADE NOW" }
     over: { count: number; percentage: number; signal: "WAIT" | "TRADE NOW" }
@@ -32,23 +40,17 @@ interface TradeSignal {
   confidence: number
   conditions: string[]
   category: "even-odd" | "over-under" | "differs"
+  pipSize: string
 }
 
-const MARKETS = [
-  { symbol: "R_10", name: "Volatility 10 (1s)" },
-  { symbol: "R_25", name: "Volatility 25 (1s)" },
-  { symbol: "R_50", name: "Volatility 50 (1s)" },
-  { symbol: "R_75", name: "Volatility 75 (1s)" },
-  { symbol: "R_100", name: "Volatility 100 (1s)" },
-  { symbol: "1HZ10V", name: "Volatility 10 Index" },
-  { symbol: "1HZ25V", name: "Volatility 25 Index" },
-  { symbol: "1HZ50V", name: "Volatility 50 Index" },
-  { symbol: "1HZ75V", name: "Volatility 75 Index" },
-  { symbol: "1HZ100V", name: "Volatility 100 Index" },
-  { symbol: "1HZ15V", name: "Volatility 15 (1s) Index" },
-  { symbol: "1HZ30V", name: "Volatility 30 (1s) Index" },
-  { symbol: "1HZ90V", name: "Volatility 90 (1s) Index" },
-]
+// Initialize markets from config
+const MARKETS = getAllMarketSymbols().map((symbol) => {
+  const config = getMarketConfig(symbol)
+  return {
+    symbol,
+    name: config?.name || symbol,
+  }
+})
 
 interface SuperSignalsTabProps {
   theme?: "light" | "dark"
@@ -60,6 +62,7 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
   const [showSignalPopup, setShowSignalPopup] = useState(false)
   const [autoShowSignals, setAutoShowSignals] = useState(true)
   const [signalsDeactivated, setSignalsDeactivated] = useState(false)
+  const [wsConnected, setWsConnected] = useState(false)
   const subscriptionIdsRef = useRef<Map<string, string>>(new Map())
   const isInitializedRef = useRef(false)
 
@@ -71,12 +74,15 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
       const initialData = new Map<string, MarketData>()
 
       MARKETS.forEach((market) => {
+        const config = getMarketConfig(market.symbol)
         initialData.set(market.symbol, {
           symbol: market.symbol,
           displayName: market.name,
           currentPrice: 0,
           lastDigit: 0,
           last100Digits: [],
+          pipSize: config?.pipSize || 0.00001,
+          decimalPlaces: config?.decimalPlaces || 5,
           analysis: {
             under: { count: 0, percentage: 0, signal: "WAIT" },
             over: { count: 0, percentage: 0, signal: "WAIT" },
@@ -90,8 +96,12 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
       setMarketsData(initialData)
 
       try {
-        await derivWebSocket.connect()
-        console.log("[v0] Connected to Deriv WebSocket")
+        // Connect to Deriv WebSocket
+        if (!derivWebSocket.isConnected()) {
+          await derivWebSocket.connect()
+        }
+        setWsConnected(true)
+        console.log("[v0] Connected to Deriv WebSocket for Super Signals")
 
         for (const market of MARKETS) {
           const subscriptionId = await derivWebSocket.subscribeTicks(market.symbol, (tick) => {
@@ -101,7 +111,8 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
 
               if (!marketData) return prev
 
-              const lastDigit = tick.lastDigit
+              // Extract last digit using market's decimal places
+              const lastDigit = extractLastDigitFromPrice(tick.quote, marketData.decimalPlaces)
               const currentPrice = tick.quote
               const newDigits = [...marketData.last100Digits, lastDigit].slice(-100)
 
@@ -155,6 +166,8 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
                 lastDigit,
                 last100Digits: newDigits,
                 analysis,
+                pipSize: marketData.pipSize,
+                decimalPlaces: marketData.decimalPlaces,
               })
 
               return updated
@@ -164,7 +177,8 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
           subscriptionIdsRef.current.set(market.symbol, subscriptionId)
         }
       } catch (error) {
-        console.error("[v0] Failed to connect to WebSocket:", error)
+        setWsConnected(false)
+        console.error("[v0] Failed to connect to WebSocket for Super Signals:", error)
       }
     }
 
@@ -186,19 +200,23 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
   ) => {
     if (signalsDeactivated) return
 
+    const marketConfig = getMarketConfig(symbol)
+    const pipSize = marketConfig?.pipSize.toString() || "0.00001"
+    const formattedPrice = formatPriceForMarket(price, symbol)
     const signals: TradeSignal[] = []
 
     if (analysis.under.signal === "TRADE NOW") {
       signals.push({
         market: displayName,
         tradeType: "Under (0-4)",
-        entryPoint: price.toFixed(5),
+        entryPoint: formattedPrice,
         validity: "5 ticks",
         confidence: analysis.under.percentage,
         category: "over-under",
+        pipSize,
         conditions: [
           `Under digits: ${analysis.under.count}/100 (${analysis.under.percentage}%)`,
-          `Strong dominance detected`,
+          `Pip size: ${pipSize} | Market: ${symbol}`,
           `Entry confidence: HIGH`,
         ],
       })
@@ -208,13 +226,14 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
       signals.push({
         market: displayName,
         tradeType: "Over (5-9)",
-        entryPoint: price.toFixed(5),
+        entryPoint: formattedPrice,
         validity: "5 ticks",
         confidence: analysis.over.percentage,
         category: "over-under",
+        pipSize,
         conditions: [
           `Over digits: ${analysis.over.count}/100 (${analysis.over.percentage}%)`,
-          `Strong dominance detected`,
+          `Pip size: ${pipSize} | Market: ${symbol}`,
           `Entry confidence: HIGH`,
         ],
       })
@@ -224,13 +243,14 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
       signals.push({
         market: displayName,
         tradeType: "Even",
-        entryPoint: price.toFixed(5),
+        entryPoint: formattedPrice,
         validity: "5 ticks",
         confidence: analysis.even.percentage,
         category: "even-odd",
+        pipSize,
         conditions: [
           `Even digits: ${analysis.even.count}/100 (${analysis.even.percentage}%)`,
-          `Strong pattern detected`,
+          `Pip size: ${pipSize} | Market: ${symbol}`,
           `Entry confidence: HIGH`,
         ],
       })
@@ -240,13 +260,14 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
       signals.push({
         market: displayName,
         tradeType: "Odd",
-        entryPoint: price.toFixed(5),
+        entryPoint: formattedPrice,
         validity: "5 ticks",
         confidence: analysis.odd.percentage,
         category: "even-odd",
+        pipSize,
         conditions: [
           `Odd digits: ${analysis.odd.count}/100 (${analysis.odd.percentage}%)`,
-          `Strong pattern detected`,
+          `Pip size: ${pipSize} | Market: ${symbol}`,
           `Entry confidence: HIGH`,
         ],
       })
@@ -256,13 +277,14 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
       signals.push({
         market: displayName,
         tradeType: `Differs (${analysis.differs.digit})`,
-        entryPoint: price.toFixed(5),
+        entryPoint: formattedPrice,
         validity: "5 ticks",
         confidence: analysis.differs.percentage,
         category: "differs",
+        pipSize,
         conditions: [
           `Digit ${analysis.differs.digit} rarely appears: ${analysis.differs.count}/100`,
-          `High probability of difference`,
+          `Pip size: ${pipSize} | Market: ${symbol}`,
           `Entry confidence: HIGH`,
         ],
       })
@@ -376,10 +398,22 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
                 </Button>
               </>
             )}
-            <Badge className="bg-emerald-500 text-white text-sm px-4 py-2 animate-pulse flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              {signalsDeactivated ? "Signals Inactive" : `Live Monitoring ${MARKETS.length} Markets`}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge 
+                className={`text-white text-sm px-3 py-1 flex items-center gap-2 ${
+                  wsConnected 
+                    ? "bg-green-500 animate-pulse" 
+                    : "bg-red-500"
+                }`}
+              >
+                <div className="w-2 h-2 rounded-full bg-white"></div>
+                {wsConnected ? "WS Connected" : "WS Disconnected"}
+              </Badge>
+              <Badge className="bg-emerald-500 text-white text-sm px-4 py-2 animate-pulse flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                {signalsDeactivated ? "Signals Inactive" : `Live Monitoring ${MARKETS.length} Markets`}
+              </Badge>
+            </div>
           </div>
         </div>
 
@@ -440,7 +474,7 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
                     <div className="flex items-center gap-2">
                       <span className={`text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>Price:</span>
                       <span className={`text-sm font-bold ${theme === "dark" ? "text-cyan-400" : "text-cyan-600"}`}>
-                        {market.currentPrice.toFixed(5)}
+                        {formatPriceForMarket(market.currentPrice, market.symbol)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
