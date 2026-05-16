@@ -8,12 +8,15 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Activity, Zap, X, Eye, Power, AlertCircle } from 'lucide-react'
 import { derivWebSocket } from "@/lib/deriv-websocket-manager"
+import { tickDataService } from "@/lib/tick-data-service"
 import { 
   getMarketConfig, 
   formatPriceForMarket, 
   extractLastDigitFromPrice,
   getAllMarketSymbols 
 } from "@/lib/market-pip-sizes"
+import StrategyFilter, { StrategyType } from "@/components/strategy-filter"
+import SignalCardRedesigned from "@/components/signal-card-redesigned"
 
 interface MarketData {
   symbol: string
@@ -63,6 +66,9 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
   const [autoShowSignals, setAutoShowSignals] = useState(true)
   const [signalsDeactivated, setSignalsDeactivated] = useState(false)
   const [wsConnected, setWsConnected] = useState(false)
+  const [selectedStrategies, setSelectedStrategies] = useState<StrategyType[]>(["even-odd", "over-under", "differs"])
+  const [selectedMarkets, setSelectedMarkets] = useState<string[]>([])
+  const [minConfidence, setMinConfidence] = useState(60)
   const subscriptionIdsRef = useRef<Map<string, string>>(new Map())
   const isInitializedRef = useRef(false)
 
@@ -75,6 +81,9 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
 
       MARKETS.forEach((market) => {
         const config = getMarketConfig(market.symbol)
+        // Initialize tick data service for this market
+        tickDataService.initializeMarket(market.symbol)
+        
         initialData.set(market.symbol, {
           symbol: market.symbol,
           displayName: market.name,
@@ -92,6 +101,9 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
           },
         })
       })
+      
+      // Initialize with all markets selected
+      setSelectedMarkets(MARKETS.map(m => m.symbol))
 
       setMarketsData(initialData)
 
@@ -105,6 +117,14 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
 
         for (const market of MARKETS) {
           const subscriptionId = await derivWebSocket.subscribeTicks(market.symbol, (tick) => {
+            // Store tick in history service
+            tickDataService.addTick(market.symbol, {
+              quote: tick.quote,
+              bid: tick.bid || tick.quote,
+              ask: tick.ask || tick.quote,
+              timestamp: Date.now()
+            })
+
             setMarketsData((prev) => {
               const updated = new Map(prev)
               const marketData = updated.get(market.symbol)
@@ -443,8 +463,61 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {totalMarkets.map((market) => {
+      {/* Strategy Filter */}
+      <StrategyFilter
+        selectedStrategies={selectedStrategies}
+        onStrategyChange={setSelectedStrategies}
+        selectedMarkets={selectedMarkets}
+        onMarketChange={setSelectedMarkets}
+        availableMarkets={MARKETS.map(m => m.symbol)}
+        theme={theme}
+        minConfidence={minConfidence}
+        onConfidenceChange={setMinConfidence}
+      />
+
+      {/* Filtered Signals Grid */}
+      <div className="space-y-4">
+        <h3 className={`text-lg font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+          Active Signals
+        </h3>
+        {tradeSignals.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {tradeSignals
+              .filter(signal => selectedStrategies.includes(signal.category as StrategyType))
+              .filter(signal => selectedMarkets.length === 0 || selectedMarkets.includes(signal.market))
+              .filter(signal => signal.confidence >= minConfidence)
+              .map((signal, idx) => (
+                <SignalCardRedesigned
+                  key={idx}
+                  market={signal.market}
+                  tradeType={signal.tradeType}
+                  entryPoint={signal.entryPoint}
+                  confidence={signal.confidence}
+                  pipSize={signal.pipSize}
+                  category={signal.category}
+                  conditions={signal.conditions}
+                  theme={theme}
+                  onExecute={() => handleCloseSignal(signal.market + signal.tradeType)}
+                />
+              ))}
+          </div>
+        ) : (
+          <Card className={`p-8 text-center ${theme === "dark" ? "bg-gray-900/50" : "bg-gray-50"}`}>
+            <AlertCircle className={`h-8 w-8 mx-auto mb-2 ${theme === "dark" ? "text-gray-600" : "text-gray-400"}`} />
+            <p className={theme === "dark" ? "text-gray-400" : "text-gray-600"}>
+              No signals matching your filters. Monitoring {selectedMarkets.length} markets...
+            </p>
+          </Card>
+        )}
+      </div>
+
+      {/* Market Analysis Grid */}
+      <div>
+        <h3 className={`text-lg font-bold mb-4 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+          Market Overview
+        </h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {totalMarkets.filter(m => selectedMarkets.length === 0 || selectedMarkets.includes(m.symbol)).map((market) => {
           const hasSignal =
             market.analysis.under.signal === "TRADE NOW" ||
             market.analysis.over.signal === "TRADE NOW" ||
@@ -663,14 +736,11 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
                         </span>
                         <div className={`text-xl font-bold ${textColors[signal.category]}`}>{signal.confidence}%</div>
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
             </div>
-          </div>
+          )
+        })}
         </div>
-      )}
+      </div>
     </div>
   )
 }
