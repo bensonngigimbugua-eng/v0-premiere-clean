@@ -407,103 +407,51 @@ export function OverUnderTab({
             })}
           </div>
         </div>
-                {digitPower.confidence}%
+
+        <div className="space-y-3">
+          <div className="flex items-center gap-4">
+            <div className={`text-sm font-semibold w-32 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+              Over ({selectedDigit + 1}-9)
+            </div>
+            <div className="flex-1 relative">
+              <div className={`w-full rounded-full h-8 ${theme === "dark" ? "bg-gray-800" : "bg-gray-200"}`}>
+                <div
+                  className={`h-8 rounded-full transition-all ${
+                    theme === "dark"
+                      ? "bg-gradient-to-r from-green-600 to-green-500"
+                      : "bg-gradient-to-r from-green-500 to-green-400"
+                  }`}
+                  style={{ width: `${Math.min(overPercent, 100)}%` }}
+                />
               </div>
-              <div
-                className={`text-xs font-bold ${
-                  digitPower.strength === "VERY STRONG"
-                    ? "text-green-500"
-                    : digitPower.strength === "STRONG"
-                      ? "text-blue-500"
-                      : digitPower.strength === "MODERATE"
-                        ? "text-yellow-500"
-                        : "text-gray-500"
-                }`}
-              >
-                {digitPower.strength}
-              </div>
+            </div>
+            <div
+              className={`text-xl font-bold w-20 text-right ${theme === "dark" ? "text-cyan-400" : "text-cyan-600"}`}
+            >
+              {overPercent.toFixed(1)}%
             </div>
           </div>
 
-          {/* Confidence Meter */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className={`text-sm font-semibold ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
-                Prediction Strength
-              </span>
+          <div className="flex items-center gap-4">
+            <div className={`text-sm font-semibold w-32 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+              Under (0-{selectedDigit - 1})
             </div>
-            <div className={`w-full rounded-full h-3 ${theme === "dark" ? "bg-gray-800" : "bg-gray-200"}`}>
-              <div
-                className={`h-3 rounded-full transition-all ${
-                  digitPower.strength === "VERY STRONG"
-                    ? "bg-gradient-to-r from-green-600 to-green-400"
-                    : digitPower.strength === "STRONG"
-                      ? "bg-gradient-to-r from-blue-600 to-blue-400"
-                      : digitPower.strength === "MODERATE"
-                        ? "bg-gradient-to-r from-yellow-600 to-yellow-400"
-                        : "bg-gradient-to-r from-gray-600 to-gray-400"
-                }`}
-                style={{ width: `${Math.min(Number.parseFloat(digitPower.confidence), 100)}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Digit Comparison */}
-          <div className="space-y-4 mt-6">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className={`text-sm font-semibold ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
-                  Over ({selectedDigit + 1}-9)
-                </span>
-                <span className={`text-lg font-bold ${theme === "dark" ? "text-green-400" : "text-green-600"}`}>
-                  {overPercent.toFixed(1)}%
-                </span>
+            <div className="flex-1 relative">
+              <div className={`w-full rounded-full h-8 ${theme === "dark" ? "bg-gray-800" : "bg-gray-200"}`}>
+                <div
+                  className={`h-8 rounded-full transition-all ${
+                    theme === "dark"
+                      ? "bg-gradient-to-r from-blue-600 to-cyan-500"
+                      : "bg-gradient-to-r from-blue-500 to-cyan-400"
+                  }`}
+                  style={{ width: `${Math.min(underPercent, 100)}%` }}
+                />
               </div>
-              <Progress value={overPercent} className={`h-3 ${theme === "dark" ? "bg-gray-800" : "bg-gray-200"}`} />
             </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className={`text-sm font-semibold ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
-                  Under (0-{selectedDigit - 1})
-                </span>
-                <span className={`text-lg font-bold ${theme === "dark" ? "text-blue-400" : "text-blue-600"}`}>
-                  {underPercent.toFixed(1)}%
-                </span>
-              </div>
-              <Progress value={underPercent} className={`h-3 ${theme === "dark" ? "bg-gray-800" : "bg-gray-200"}`} />
-            </div>
-          </div>
-
-          {/* Recent Digits */}
-          <div className="mt-6">
-            <h4 className={`text-sm font-bold mb-3 ${theme === "dark" ? "text-gray-400" : "text-gray-700"}`}>
-              Recent Pattern (Last {Math.min(20, analysisDigits.length)} digits)
-            </h4>
-            <div className="flex flex-wrap gap-1.5">
-              {last20Digits.map((digit, idx) => {
-                const isCurrentDigit = digit === selectedDigit
-                const isOver = digit > selectedDigit
-
-                return (
-                  <div
-                    key={idx}
-                    className={`w-9 h-9 rounded-md flex items-center justify-center text-xs font-bold transition-all ${
-                      isCurrentDigit
-                        ? "bg-amber-500 text-white shadow-[0_0_10px_rgba(217,119,6,0.6)] scale-105"
-                        : isOver
-                          ? theme === "dark"
-                            ? "bg-green-600 text-white"
-                            : "bg-green-500 text-white"
-                          : theme === "dark"
-                            ? "bg-blue-600 text-white"
-                            : "bg-blue-500 text-white"
-                    }`}
-                  >
-                    {digit}
-                  </div>
-                )
-              })}
+            <div
+              className={`text-xl font-bold w-20 text-right ${theme === "dark" ? "text-cyan-400" : "text-cyan-600"}`}
+            >
+              {underPercent.toFixed(1)}%
             </div>
           </div>
         </div>
