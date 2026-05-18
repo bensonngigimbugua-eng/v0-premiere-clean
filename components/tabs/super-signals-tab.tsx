@@ -739,10 +739,8 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
                     </div>
                   )
                 })}
-              </Card>
-            )
-          })}
-        </div>
+              </div>
+            </div>
       </div>
     </div>
   )
