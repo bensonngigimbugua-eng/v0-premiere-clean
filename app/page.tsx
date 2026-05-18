@@ -21,7 +21,6 @@ import { StatisticalAnalysis } from "@/components/statistical-analysis"
 import { LastDigitsChart } from "@/components/charts/last-digits-chart"
 import { LastDigitsLineChart } from "@/components/charts/last-digits-line-chart"
 import { AIAnalysisTab } from "@/components/tabs/ai-analysis-tab"
-import { SuperSignalsTab } from "@/components/tabs/super-signals-tab"
 import { LoadingScreen } from "@/components/loading-screen"
 import { DerivAuth } from "@/components/deriv-auth"
 import { AutoBotTab } from "@/components/tabs/autobot-tab"
@@ -78,7 +77,6 @@ export default function DerivAnalysisApp() {
       console.log("[v0] ✅ Global API Token Integration Complete")
       console.log("[v0] ✅ Balance Update Fixed")
       console.log("[v0] ✅ Digits Distribution Updated")
-      console.log("[v0] ✅ Super Signals Updated")
       console.log("[v0] ✅ Even/Odd Tab Updated - WAIT text now shows in blue badge")
       console.log("[v0] ✅ Over/Under Tab Updated - Duplicate '(Selected: 4)' text removed")
       console.log("[v0] ✅ AI Analysis Updated")
@@ -326,7 +324,6 @@ export default function DerivAnalysisApp() {
               "smart-analysis",
               "signals",
               "pro-signals",
-              "super-signals",
               "even-odd",
               "over-under",
               "advanced-over-under",
@@ -363,10 +360,8 @@ export default function DerivAnalysisApp() {
                     ? "Signals 📈"
                     : tab === "pro-signals"
                       ? "Pro Signals 🎯"
-                      : tab === "super-signals"
-                        ? "Super Signals ⚡"
-                        : tab === "even-odd"
-                          ? "Even/Odd 🔀"
+                      : tab === "even-odd"
+                        ? "Even/Odd 🔀"
                           : tab === "over-under"
                             ? "Over/Under 📉"
                             : tab === "advanced-over-under"
@@ -587,17 +582,6 @@ export default function DerivAnalysisApp() {
 
               <TabsContent value="pro-signals" className="mt-0">
                 {analysis && <ProSignalsTab proSignals={proSignals} analysis={analysis} theme={theme} />}
-              </TabsContent>
-
-              <TabsContent value="super-signals" className="mt-0">
-                {analysis && (
-                  <SuperSignalsTab
-                    analysis={analysis}
-                    currentDigit={currentDigit}
-                    recentDigits={recent100Digits}
-                    theme={theme}
-                  />
-                )}
               </TabsContent>
 
               <TabsContent value="even-odd" className="mt-0">
