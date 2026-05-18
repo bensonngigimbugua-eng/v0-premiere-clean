@@ -741,7 +741,9 @@ export function SuperSignalsTab({ theme = "dark" }: SuperSignalsTabProps) {
                 })}
               </div>
             </div>
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
