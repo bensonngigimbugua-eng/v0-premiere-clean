@@ -34,6 +34,7 @@ import { ResponsiveTabs } from "@/components/responsive-tabs"
 import { MoneyMakerTab } from "@/components/tabs/money-maker-tab"
 import { TradeNowTab } from "@/components/tabs/trade-now-tab"
 import { ToolsInfoTab } from "@/components/tabs/tools-info-tab"
+import { BotBuilderTab } from "@/components/tabs/bot-builder-tab"
 
 export default function DerivAnalysisApp() {
   const [theme, setTheme] = useState<"light" | "dark">("dark")
@@ -331,6 +332,7 @@ export default function DerivAnalysisApp() {
               "differs",
               "rise-fall",
               "ai-analysis",
+              "bot-builder",
               "autobot",
               "automated",
               "automated-trades",
@@ -373,9 +375,11 @@ export default function DerivAnalysisApp() {
                                   : tab === "rise-fall"
                                     ? "Rise/Fall 📈"
                                     : tab === "ai-analysis"
-                                      ? "AI Analysis 🤖"
-                                      : tab === "autobot"
-                                        ? "AutoBot 🤖"
+                      ? "AI Analysis 🤖"
+                      : tab === "bot-builder"
+                        ? "Bot Builder 🎯"
+                        : tab === "autobot"
+                          ? "AutoBot 🤖"
                                         : tab === "automated"
                                           ? "Automated 🚀"
                                           : tab === "automated-trades"
@@ -636,6 +640,10 @@ export default function DerivAnalysisApp() {
                     theme={theme}
                   />
                 )}
+              </TabsContent>
+
+              <TabsContent value="bot-builder" className="mt-0">
+                <BotBuilderTab theme={theme} />
               </TabsContent>
 
               <TabsContent value="ai-analysis" className="mt-0">
