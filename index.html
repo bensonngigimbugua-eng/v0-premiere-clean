@@ -360,6 +360,68 @@
                 </div>
             </div>
         </div>
+
+        <!-- Floating Dashboard Bar -->
+        <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-6 z-50">
+            <div class="bg-gradient-to-r from-slate-900/95 to-slate-800/95 border border-slate-700/50 rounded-2xl shadow-2xl backdrop-blur-xl px-6 py-4 flex items-center justify-between gap-4">
+                <!-- Left Section - Status & Balance -->
+                <div class="flex items-center gap-6 flex-1">
+                    <!-- Connection Status -->
+                    <div class="flex items-center gap-2">
+                        <span class="status-indicator status-connected" id="floatingStatus"></span>
+                        <span class="text-xs font-semibold text-green-500" id="floatingConnection">Connected</span>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="w-px h-6 bg-slate-600/50"></div>
+
+                    <!-- Market Status -->
+                    <div class="flex items-center gap-2">
+                        <svg class="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        <span class="text-xs font-semibold text-gray-400" id="floatingMarketStatus">Active</span>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="w-px h-6 bg-slate-600/50"></div>
+
+                    <!-- Balance Display -->
+                    <div class="flex items-center gap-1">
+                        <span class="text-xs text-gray-400">Balance</span>
+                        <span class="text-sm font-bold text-gray-100" id="floatingBalance">$0.00</span>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="w-px h-6 bg-slate-600/50"></div>
+
+                    <!-- Performance Indicator -->
+                    <div class="flex items-center gap-1.5">
+                        <svg class="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                        <span class="text-xs font-semibold text-green-500" id="floatingProfit">+2.4%</span>
+                    </div>
+                </div>
+
+                <!-- Right Section - Actions -->
+                <div class="flex items-center gap-3">
+                    <button id="floatingTradeBtn" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 hover:shadow-lg">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        Quick Trade
+                    </button>
+
+                    <!-- Close Button -->
+                    <button id="floatingClose" class="p-1 rounded transition-all duration-200 hover:bg-slate-700/50 text-gray-500">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -374,6 +436,49 @@
             PROPOSAL_TIMEOUT: 5000,
             MAX_RETRIES: 3
         };
+
+        // ============================================
+        // FLOATING BAR MANAGEMENT
+        // ============================================
+        function updateFloatingBar() {
+            document.getElementById('floatingBalance').textContent = `$${state.balance.toFixed(2)}`;
+            document.getElementById('floatingProfit').textContent = state.sessionProfit >= 0 
+                ? `+${(state.sessionProfit / state.balance * 100).toFixed(1)}%` 
+                : `${(state.sessionProfit / state.balance * 100).toFixed(1)}%`;
+            
+            const floatingStatus = document.getElementById('floatingStatus');
+            const floatingConnection = document.getElementById('floatingConnection');
+            
+            if (state.connected && state.authorized) {
+                floatingStatus.className = 'status-indicator status-connected';
+                floatingConnection.textContent = 'Connected';
+                floatingConnection.className = 'text-xs font-semibold text-green-500';
+            } else if (state.connected) {
+                floatingStatus.className = 'status-indicator status-connecting';
+                floatingConnection.textContent = 'Connecting';
+                floatingConnection.className = 'text-xs font-semibold text-yellow-500';
+            } else {
+                floatingStatus.className = 'status-indicator status-disconnected';
+                floatingConnection.textContent = 'Disconnected';
+                floatingConnection.className = 'text-xs font-semibold text-red-500';
+            }
+
+            const floatingMarketStatus = document.getElementById('floatingMarketStatus');
+            floatingMarketStatus.textContent = state.botRunning ? 'Bot Running' : 'Idle';
+            floatingMarketStatus.className = state.botRunning 
+                ? 'text-xs font-semibold text-green-400 animate-pulse' 
+                : 'text-xs font-semibold text-gray-400';
+        }
+
+        document.getElementById('floatingTradeBtn').addEventListener('click', () => {
+            if (state.authorized && !state.botRunning) {
+                document.getElementById('tradeBtn').click();
+            }
+        });
+
+        document.getElementById('floatingClose').addEventListener('click', () => {
+            document.querySelector('.floating-bar').style.display = 'none';
+        });
 
         // ============================================
         // STATE MANAGEMENT
@@ -433,6 +538,9 @@
                 ? ((state.wins / (state.wins + state.losses)) * 100).toFixed(1)
                 : 0;
             document.getElementById('winRate').textContent = `${winRate}%`;
+            
+            // Update floating bar
+            updateFloatingBar();
 
             const indicator = document.getElementById('statusIndicator');
             const status = document.getElementById('connectionStatus');
