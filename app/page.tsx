@@ -37,6 +37,7 @@ import { ToolsInfoTab } from "@/components/tabs/tools-info-tab"
 import { BotBuilderTab } from "@/components/tabs/bot-builder-tab"
 import { FloatingSignal } from "@/components/floating-signal"
 import { SignalAnalyzer } from "@/lib/signal-analyzer"
+import { FloatingAIAnalyzer } from "@/components/floating-ai-analyzer"
 
 export default function DerivAnalysisApp() {
   const [theme, setTheme] = useState<"light" | "dark">("dark")
@@ -785,6 +786,20 @@ export default function DerivAnalysisApp() {
         scanProgress={scanProgress}
         theme={theme}
         onStartScanning={handleStartScanning}
+      />
+
+      {/* Floating AI Analyzer Component */}
+      <FloatingAIAnalyzer
+        signal={currentSignal ? {
+          strategy: currentSignal.strategy,
+          confidence: currentSignal.confidence,
+          entrySignal: currentSignal.entrySignal,
+          market: symbol,
+          probability: currentSignal.probability,
+          suggestedDigit: currentSignal.suggestedDigit,
+        } : null}
+        isAnalyzing={isScanning}
+        theme={theme}
       />
     </div>
   )
