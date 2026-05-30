@@ -48,7 +48,7 @@ export class SignalAnalyzer {
     return {
       most: sorted[0],
       second: sorted[1],
-      least: sorted[sortedLength - 1],
+      least: sorted[sorted.length - 1],
       sorted,
     }
   }
