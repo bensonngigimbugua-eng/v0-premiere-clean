@@ -35,12 +35,18 @@ import { MoneyMakerTab } from "@/components/tabs/money-maker-tab"
 import { TradeNowTab } from "@/components/tabs/trade-now-tab"
 import { ToolsInfoTab } from "@/components/tabs/tools-info-tab"
 import { BotBuilderTab } from "@/components/tabs/bot-builder-tab"
+import { FloatingSignal } from "@/components/floating-signal"
+import { SignalAnalyzer } from "@/lib/signal-analyzer"
 
 export default function DerivAnalysisApp() {
   const [theme, setTheme] = useState<"light" | "dark">("dark")
   const [isLoading, setIsLoading] = useState(true)
   const [showTradingSlider, setShowTradingSlider] = useState(true)
   const [initError, setInitError] = useState<string | null>(null)
+  const [signalAnalyzer] = useState(() => new SignalAnalyzer())
+  const [currentSignal, setCurrentSignal] = useState<any>(null)
+  const [isScanning, setIsScanning] = useState(false)
+  const [scanProgress, setScanProgress] = useState(0)
   const globalContext = useGlobalTradingContext()
 
   const {
@@ -114,6 +120,35 @@ export default function DerivAnalysisApp() {
 
   const activeSignals = (signals || []).filter((s) => s.status !== "NEUTRAL")
   const powerfulSignalsCount = activeSignals.filter((s) => s.status === "TRADE NOW").length
+
+  // Update signal analyzer with new digits
+  useEffect(() => {
+    if (currentDigit !== null) {
+      signalAnalyzer.updateTicks(currentDigit)
+      const bestSignal = signalAnalyzer.getBestSignal(symbol)
+      setCurrentSignal(bestSignal)
+    }
+  }, [currentDigit, symbol, signalAnalyzer])
+
+  // Handle scanning
+  const handleStartScanning = async () => {
+    setIsScanning(true)
+    setScanProgress(0)
+
+    const markets = [
+      "R_10", "R_15", "R_25", "R_30", "R_50", "R_75", "R_90", "R_100",
+      "1", "25", "50", "75", "100"
+    ]
+
+    for (let i = 0; i < markets.length; i++) {
+      // Simulate scanning progress
+      setScanProgress((i / markets.length) * 100)
+      await new Promise((resolve) => setTimeout(resolve, 500))
+    }
+
+    setScanProgress(100)
+    setIsScanning(false)
+  }
 
   if (initError) {
     return (
@@ -742,6 +777,15 @@ export default function DerivAnalysisApp() {
           </div>
         </div>
       </footer>
+
+      {/* Floating Signal Component */}
+      <FloatingSignal
+        signal={currentSignal}
+        isScanning={isScanning}
+        scanProgress={scanProgress}
+        theme={theme}
+        onStartScanning={handleStartScanning}
+      />
     </div>
   )
 }
