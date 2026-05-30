@@ -70,7 +70,7 @@ export function SmartTrader({ theme = "dark", currency = "USD" }: SmartTraderPro
       // Fetch from API if not cached
       if (!apiClient) return
       const symbols = await apiClient.getActiveSymbols()
-      const volatilityMarkets = symbols.filter((s) => s.market === "synthetic_index" && s.symbol.startsWith("R_"))
+      const volatilityMarkets = symbols.filter((s) => s.market === "synthetic_index" && (s.underlying_symbol || s.symbol || "").startsWith("R_"))
       setMarkets(volatilityMarkets)
       setCachedMarkets(volatilityMarkets)
     } catch (error) {

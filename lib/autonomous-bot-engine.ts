@@ -335,13 +335,12 @@ export class AutonomousBotEngine {
   private async executeTrade(signal: TradeSignal) {
     try {
       const tradeParams: any = {
-        symbol: this.state.currentMarket,
+        underlying_symbol: this.state.currentMarket,
         contract_type: signal.contractType,
         amount: this.state.currentStake,
         basis: "stake",
         duration: this.config.duration,
         duration_unit: this.config.durationUnit,
-        currency: "USD",
       }
 
       if (signal.barrier) {

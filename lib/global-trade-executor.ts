@@ -99,10 +99,9 @@ export class GlobalTradeExecutor {
           amount: request.stake,
           basis: "stake",
           contract_type: request.contractType,
-          currency: "USD",
           duration: request.duration,
           duration_unit: "s",
-          symbol: request.market,
+          underlying_symbol: request.market,
         }),
       )
     })

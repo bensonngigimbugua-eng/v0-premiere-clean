@@ -103,7 +103,7 @@ export function TradingTab({ theme: propTheme }: TradingTabProps) {
       const continuousIndices = symbols.filter((symbol: any) => {
         const market = symbol.market?.toLowerCase() || ""
         const submarket = symbol.submarket?.toLowerCase() || ""
-        const display = symbol.display_name?.toLowerCase() || ""
+        const display = (symbol.underlying_symbol_name || symbol.display_name || "").toLowerCase()
 
         return (
           market === "synthetic_index" ||
@@ -162,7 +162,8 @@ export function TradingTab({ theme: propTheme }: TradingTabProps) {
 
       const defaultMarket = Array.from(uniqueMarkets)[0]
       const defaultSubmarket = Object.keys(marketGroups[defaultMarket])[0]
-      const defaultSymbol = marketGroups[defaultMarket][defaultSubmarket][0].symbol
+      const defaultSymbolObj = marketGroups[defaultMarket][defaultSubmarket][0]
+      const defaultSymbol = defaultSymbolObj.underlying_symbol || defaultSymbolObj.symbol
 
       setSelectedMarket(defaultMarket)
       setSelectedSubmarket(defaultSubmarket)

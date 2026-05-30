@@ -48,7 +48,7 @@ export function TradeConfiguration({
 
   // Update market info when market changes
   useEffect(() => {
-    const market = activeSymbols.find((s) => s.symbol === selectedMarket)
+    const market = activeSymbols.find((s) => (s.underlying_symbol || s.symbol) === selectedMarket)
     setMarketInfo(market)
   }, [selectedMarket, activeSymbols])
 

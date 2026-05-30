@@ -61,13 +61,12 @@ export class DerivRealTrader extends EventEmitter {
       }
 
       const proposalRequest: any = {
-        symbol: config.symbol,
+        underlying_symbol: config.symbol,
         contract_type: config.contractType,
         amount: stakeAmount,
         basis: "stake",
         duration: duration,
         duration_unit: durationUnit,
-        currency: "USD",
       }
 
       if (config.barrier) {

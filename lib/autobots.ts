@@ -499,13 +499,12 @@ export class AutoBot {
     }
 
     const tradeParams: any = {
-      symbol: this.config.symbol,
+      underlying_symbol: this.config.symbol,
       contract_type: contractType,
       amount: this.state.currentStake,
       basis: "stake",
       duration: duration,
       duration_unit: durationUnit,
-      currency: "USD",
     }
 
     if (prediction) {
@@ -666,13 +665,12 @@ export class AutoBot {
     prediction?: string,
   ): Promise<{ proposal: any; analysis: any; probability: number }> {
     const tradeParams: any = {
-      symbol: this.config.symbol,
+      underlying_symbol: this.config.symbol,
       contract_type: contractType,
       amount: this.state.currentStake,
       basis: "stake",
       duration: this.config.duration,
       duration_unit: this.config.durationUnit,
-      currency: "USD",
     }
 
     if (prediction) {

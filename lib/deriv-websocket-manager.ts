@@ -233,8 +233,11 @@ export class DerivWebSocketManager {
           this.off("active_symbols", handler)
           resolve(
             message.active_symbols.map((s: any) => ({
-              symbol: s.symbol,
-              display_name: s.display_name,
+              underlying_symbol: s.underlying_symbol,
+              underlying_symbol_name: s.underlying_symbol_name,
+              // Legacy fields for backward compatibility
+              symbol: s.underlying_symbol || s.symbol,
+              display_name: s.underlying_symbol_name || s.display_name,
             }))
           )
         }
@@ -243,7 +246,6 @@ export class DerivWebSocketManager {
       this.on("active_symbols", handler)
       this.send({
         active_symbols: "brief",
-        product_type: "basic",
       })
     })
   }
