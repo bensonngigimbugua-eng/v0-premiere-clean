@@ -4,148 +4,140 @@ interface DigitDistributionProps {
   frequencies: Record<number, { count: number; percentage: number }>
   currentDigit: number | null
   theme: "light" | "dark"
+  watchedDigits?: number[]
 }
 
-export function DigitDistribution({ frequencies, currentDigit, theme }: DigitDistributionProps) {
-  // Split digits into two rows: 0-4 and 5-9
-  const row1Digits = [0, 1, 2, 3, 4]
-  const row2Digits = [5, 6, 7, 8, 9]
+export function DigitDistribution({ frequencies, currentDigit, theme, watchedDigits = [] }: DigitDistributionProps) {
+  // Calculate frequency rankings for color coding
+  const sortedByFrequency = Object.entries(frequencies)
+    .map(([digit, data]) => ({ digit: Number(digit), ...data }))
+    .sort((a, b) => b.percentage - a.percentage)
 
-  const getMaxPercentage = () => {
-    return Math.max(...Object.values(frequencies).map((f) => f.percentage))
-  }
-
-  const maxPercentage = getMaxPercentage()
-
-  const getSortedDigits = () => {
-    const digitsWithFreq = Object.entries(frequencies).map(([digit, freq]) => ({
-      digit: Number.parseInt(digit),
-      ...freq,
-    }))
-    return digitsWithFreq.sort((a, b) => b.count - a.count)
-  }
-
-  const sortedDigits = getSortedDigits()
-  const mostAppearing = sortedDigits[0]?.digit
-  const secondMostAppearing = sortedDigits[1]?.digit
-  const leastAppearing = sortedDigits[sortedDigits.length - 1]?.digit
-
-  const getCircleColor = (digit: number) => {
-    if (currentDigit === digit) {
-      return theme === "dark"
-        ? "bg-purple-500 border-purple-400 shadow-[0_0_30px_rgba(168,85,247,0.8)] ring-4 ring-purple-500/30"
-        : "bg-purple-500 border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.6)] ring-4 ring-purple-400/30"
-    }
-    if (digit === mostAppearing) {
-      return theme === "dark"
-        ? "bg-green-500 border-green-400 shadow-[0_0_20px_rgba(34,197,94,0.6)]"
-        : "bg-green-500 border-green-400 shadow-[0_0_15px_rgba(34,197,94,0.5)]"
-    }
-    if (digit === secondMostAppearing) {
-      return theme === "dark"
-        ? "bg-yellow-500 border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.6)]"
-        : "bg-yellow-500 border-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.5)]"
-    }
-    if (digit === leastAppearing) {
-      return theme === "dark"
-        ? "bg-red-500 border-red-400 shadow-[0_0_20px_rgba(239,68,68,0.6)]"
-        : "bg-red-500 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.5)]"
-    }
-    // Default color for other digits
-    return theme === "dark" ? "bg-blue-500/50 border-blue-400/50" : "bg-blue-400/50 border-blue-300/50"
+  const getFrequencyColor = (digit: number) => {
+    const rank = sortedByFrequency.findIndex(item => item.digit === digit)
+    if (rank === 0) return "#22c55e" // Green - most appearing
+    if (rank === 1) return "#eab308" // Yellow - 2nd most
+    if (rank === sortedByFrequency.length - 1) return "#ef4444" // Red - least appearing
+    return "#3b82f6" // Blue - others
   }
 
   const renderDigitCircle = (digit: number) => {
     const freq = frequencies[digit] || { count: 0, percentage: 0 }
     const isCurrentDigit = currentDigit === digit
-    const circleColor = getCircleColor(digit)
+
+    // SVG Parameters for the circular progress
+    const size = 64
+    const strokeWidth = 5
+    const center = size / 2
+    const radius = (size - strokeWidth) / 2
+    const circumference = 2 * Math.PI * radius
+
+    // Calculate arc length for bottom-centered display (180 degrees max)
+    const maxArcLength = circumference / 2
+    const arcLength = (freq.percentage / 100) * maxArcLength
+
+    const ringColor = getFrequencyColor(digit)
 
     return (
-      <div key={digit} className="flex flex-col items-center gap-3 relative">
+      <div key={digit} className="relative flex flex-col items-center gap-2 group">
+        <div
+          className={`relative flex items-center justify-center transition-all duration-500 ${isCurrentDigit ? "scale-110" : "scale-100"
+            }`}
+        >
+          {/* Circular Progress Ring */}
+          <svg width={size} height={size} className="transform rotate-0">
+            {/* Background Track - Full Circle */}
+            <circle
+              cx={center}
+              cy={center}
+              r={radius}
+              fill="none"
+              stroke={theme === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}
+              strokeWidth={strokeWidth}
+            />
+            {/* Progress Stroke - Bottom Arc Only */}
+            <circle
+              cx={center}
+              cy={center}
+              r={radius}
+              fill="none"
+              stroke={isCurrentDigit ? "#f97316" : ringColor}
+              strokeWidth={strokeWidth}
+              strokeDasharray={`${arcLength} ${circumference}`}
+              strokeDashoffset={-circumference * 0.25}
+              strokeLinecap="round"
+              className="transition-all duration-1000 ease-out"
+              style={{
+                filter: isCurrentDigit ? "drop-shadow(0 0 6px rgba(249,115,22,0.6))" : "none",
+              }}
+            />
+          </svg>
+
+          {/* Centered Content - Digit and Percentage */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+            <span
+              className={`text-xl font-black transition-all duration-300 leading-none ${isCurrentDigit
+                ? theme === "dark"
+                  ? "text-orange-400 scale-110"
+                  : "text-orange-600 scale-110"
+                : theme === "dark"
+                  ? "text-slate-300"
+                  : "text-slate-700"
+                }`}
+            >
+              {digit}
+            </span>
+            <span
+              className={`text-[10px] font-bold transition-all duration-300 ${isCurrentDigit
+                ? theme === "dark"
+                  ? "text-orange-400"
+                  : "text-orange-600"
+                : theme === "dark"
+                  ? "text-slate-400"
+                  : "text-slate-500"
+                }`}
+            >
+              {freq.percentage.toFixed(1)}%
+            </span>
+          </div>
+
+          {/* Live Animation Pulsed Ring */}
+          {isCurrentDigit && (
+            <div className="absolute inset-0 border-2 border-orange-500 rounded-full animate-ping opacity-20" />
+          )}
+
+          {/* Watched Digit Highlight */}
+          {watchedDigits.includes(digit) && (
+            <div className="absolute inset-0 border-2 border-amber-400 rounded-full shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
+          )}
+        </div>
+
+        {/* Count Label Below */}
+        <div className="text-center">
+          <div
+            className={`text-[8px] font-mono opacity-40 ${isCurrentDigit ? "text-orange-400" : theme === "dark" ? "text-slate-500" : "text-slate-400"
+              }`}
+          >
+            n={freq.count}
+          </div>
+        </div>
+
+        {/* Floating Indicator */}
         {isCurrentDigit && (
-          <div className="absolute -top-8 left-1/2 -translate-x-1/2 animate-bounce">
-            <div className={`text-2xl ${theme === "dark" ? "text-purple-400" : "text-purple-600"}`}>↓</div>
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 pointer-events-none">
+            <span className="text-[7px] font-black bg-orange-500 text-black px-1 rounded-sm uppercase tracking-tighter animate-bounce block">
+              Now
+            </span>
           </div>
         )}
-
-        <div className="relative flex items-center justify-center">
-          <div
-            className={`
-              rounded-full border-4 flex flex-col items-center justify-center
-              transition-all duration-500 ease-out
-              ${circleColor}
-              ${isCurrentDigit ? "scale-110 animate-pulse" : "hover:scale-105"}
-            `}
-            style={{
-              width: `${60 + freq.percentage * 0.8}px`,
-              height: `${60 + freq.percentage * 0.8}px`,
-              minWidth: "60px",
-              minHeight: "60px",
-              maxWidth: "120px",
-              maxHeight: "120px",
-            }}
-          >
-            <div className="text-white font-bold text-2xl">{digit}</div>
-            <div className="text-white text-xs font-semibold">{freq.percentage.toFixed(1)}%</div>
-          </div>
-        </div>
-
-        <div
-          className={`text-center ${
-            isCurrentDigit
-              ? theme === "dark"
-                ? "text-purple-400 font-bold"
-                : "text-purple-600 font-bold"
-              : theme === "dark"
-                ? "text-gray-300"
-                : "text-gray-700"
-          }`}
-        >
-          <div className="text-xs opacity-75">Count: {freq.count}</div>
-        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap justify-center gap-4 text-xs sm:text-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full bg-green-500 border-2 border-green-400"></div>
-          <span className={theme === "dark" ? "text-gray-300" : "text-gray-700"}>Most Appearing</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full bg-yellow-500 border-2 border-yellow-400"></div>
-          <span className={theme === "dark" ? "text-gray-300" : "text-gray-700"}>2nd Most</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-red-400"></div>
-          <span className={theme === "dark" ? "text-gray-300" : "text-gray-700"}>Least Appearing</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full bg-purple-500 border-2 border-purple-400"></div>
-          <span className={theme === "dark" ? "text-gray-300" : "text-gray-700"}>Live Digit</span>
-        </div>
-      </div>
-
-      {/* Row 1: Digits 0-4 */}
-      <div>
-        <h4
-          className={`text-sm font-semibold mb-4 text-center ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}
-        >
-          Digits 0-4
-        </h4>
-        <div className="grid grid-cols-5 gap-2 sm:gap-4">{row1Digits.map(renderDigitCircle)}</div>
-      </div>
-
-      {/* Row 2: Digits 5-9 */}
-      <div>
-        <h4
-          className={`text-sm font-semibold mb-4 text-center ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}
-        >
-          Digits 5-9
-        </h4>
-        <div className="grid grid-cols-5 gap-2 sm:gap-4">{row2Digits.map(renderDigitCircle)}</div>
+    <div className="w-full max-w-4xl mx-auto py-2">
+      <div className="grid grid-cols-5 md:grid-cols-10 gap-2 sm:gap-3 justify-items-center">
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(renderDigitCircle)}
       </div>
     </div>
   )
