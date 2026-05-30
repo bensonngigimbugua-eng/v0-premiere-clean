@@ -32,9 +32,11 @@ export class TickHistoryManager {
           count,
           end: "latest",
           style: "ticks",
+          subscribe: 0
         })
 
-        if (!response.history?.prices) {
+        // New API guarantees prices and times when history object exists
+        if (!response.history || !response.history.prices || !response.history.times) {
           console.error(`[v0] No price data received for ${symbol}`)
           continue
         }

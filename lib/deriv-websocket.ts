@@ -227,13 +227,19 @@ export class DerivWebSocket {
 }
 
 export interface DerivSymbol {
-  symbol: string
-  display_name: string
+  underlying_symbol: string
+  underlying_symbol_name: string
   market: string
-  market_display_name: string
+  underlying_symbol_type: string
   submarket: string
-  submarket_display_name: string
+  exchange_is_open: number
+  is_trading_suspended: number
   pip_size?: number
+  // Legacy fields for backward compatibility
+  symbol?: string
+  display_name?: string
+  market_display_name?: string
+  submarket_display_name?: string
 }
 
 export interface ConnectionLog {

@@ -23,9 +23,10 @@ export function MarketSelector({ symbols, currentSymbol, onSymbolChange, theme =
     const otherSymbols: DerivSymbol[] = []
 
     symbols.forEach((symbol) => {
-      if (symbol.symbol.includes("1s")) {
+      const symbolName = symbol.underlying_symbol || symbol.symbol || ""
+      if (symbolName.includes("1s")) {
         volatility1s.push(symbol)
-      } else if (symbol.symbol.includes("R_") || symbol.market === "synthetic_index") {
+      } else if (symbolName.includes("R_") || symbol.market === "synthetic_index") {
         volatilityIndices.push(symbol)
       } else {
         otherSymbols.push(symbol)
@@ -33,14 +34,18 @@ export function MarketSelector({ symbols, currentSymbol, onSymbolChange, theme =
     })
 
     volatility1s.sort((a, b) => {
-      const aNum = Number.parseInt(a.symbol.match(/\d+/)?.[0] || "0")
-      const bNum = Number.parseInt(b.symbol.match(/\d+/)?.[0] || "0")
+      const aSymbol = a.underlying_symbol || a.symbol || ""
+      const bSymbol = b.underlying_symbol || b.symbol || ""
+      const aNum = Number.parseInt(aSymbol.match(/\d+/)?.[0] || "0")
+      const bNum = Number.parseInt(bSymbol.match(/\d+/)?.[0] || "0")
       return aNum - bNum
     })
 
     volatilityIndices.sort((a, b) => {
-      const aNum = Number.parseInt(a.symbol.replace("R_", "").replace("1s", "")) || 0
-      const bNum = Number.parseInt(b.symbol.replace("R_", "").replace("1s", "")) || 0
+      const aSymbol = a.underlying_symbol || a.symbol || ""
+      const bSymbol = b.underlying_symbol || b.symbol || ""
+      const aNum = Number.parseInt(aSymbol.replace("R_", "").replace("1s", "")) || 0
+      const bNum = Number.parseInt(bSymbol.replace("R_", "").replace("1s", "")) || 0
       return aNum - bNum
     })
 
@@ -71,7 +76,7 @@ export function MarketSelector({ symbols, currentSymbol, onSymbolChange, theme =
     return sortedGroups
   }, [symbols])
 
-  const currentSymbolData = symbols.find((s) => s.symbol === currentSymbol)
+  const currentSymbolData = symbols.find((s) => (s.underlying_symbol || s.symbol) === currentSymbol)
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -86,7 +91,7 @@ export function MarketSelector({ symbols, currentSymbol, onSymbolChange, theme =
               : "bg-white border-gray-300 text-gray-900 hover:bg-gray-50"
           }`}
         >
-          {currentSymbolData?.display_name || currentSymbol}
+          {currentSymbolData?.underlying_symbol_name || currentSymbolData?.display_name || currentSymbol}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -107,28 +112,32 @@ export function MarketSelector({ symbols, currentSymbol, onSymbolChange, theme =
                 heading={market}
                 className={theme === "dark" ? "text-blue-400 font-semibold" : "text-blue-600 font-semibold"}
               >
-                {marketSymbols.map((symbol) => (
-                  <CommandItem
-                    key={symbol.symbol}
-                    value={symbol.symbol}
-                    onSelect={() => {
-                      onSymbolChange(symbol.symbol)
-                      setOpen(false)
-                    }}
-                    className={
-                      theme === "dark"
-                        ? "text-white hover:bg-blue-500/20 cursor-pointer"
-                        : "text-gray-900 hover:bg-blue-50 cursor-pointer"
-                    }
-                  >
-                    <Check
-                      className={`mr-2 h-4 w-4 ${
-                        currentSymbol === symbol.symbol ? "opacity-100 text-green-400" : "opacity-0"
-                      }`}
-                    />
-                    {symbol.display_name}
-                  </CommandItem>
-                ))}
+                {marketSymbols.map((symbol) => {
+                  const symbolKey = symbol.underlying_symbol || symbol.symbol || ""
+                  const displayName = symbol.underlying_symbol_name || symbol.display_name || symbolKey
+                  return (
+                    <CommandItem
+                      key={symbolKey}
+                      value={symbolKey}
+                      onSelect={() => {
+                        onSymbolChange(symbolKey)
+                        setOpen(false)
+                      }}
+                      className={
+                        theme === "dark"
+                          ? "text-white hover:bg-blue-500/20 cursor-pointer"
+                          : "text-gray-900 hover:bg-blue-50 cursor-pointer"
+                      }
+                    >
+                      <Check
+                        className={`mr-2 h-4 w-4 ${
+                          currentSymbol === symbolKey ? "opacity-100 text-green-400" : "opacity-0"
+                        }`}
+                      />
+                      {displayName}
+                    </CommandItem>
+                  )
+                })}
               </CommandGroup>
             ))}
           </CommandList>

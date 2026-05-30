@@ -12,28 +12,37 @@ export interface AuthorizeResponse {
 }
 
 export interface ActiveSymbol {
-  symbol: string
-  display_name: string
+  underlying_symbol: string
+  underlying_symbol_name: string
   market: string
-  market_display_name: string
+  underlying_symbol_type: string
+  exchange_is_open: number
+  is_trading_suspended: number
+  subgroup: string
+  submarket: string
+  pip_size: number
+  trade_count: number
 }
 
 export interface ContractType {
   contract_type: string
-  contract_display: string
   contract_category: string
-  contract_category_display: string
   barriers: number
+  exchange_name: string
+  expiry_type: string
+  market: string
+  sentiment: string
+  submarket: string
+  underlying_symbol: string
 }
 
 export interface ProposalRequest {
-  symbol: string
+  underlying_symbol: string
   contract_type: string
   amount: number
   basis: string
   duration: number
   duration_unit: string
-  currency: string
   barrier?: string
 }
 
@@ -77,6 +86,9 @@ export interface TickData {
   quote: number
   epoch: number
   id: string
+  ask: number
+  bid: number
+  pip_size?: number
 }
 
 export interface TickHistoryResponse {
@@ -310,7 +322,7 @@ export class DerivAPIClient {
   }
 
   async getActiveSymbols(): Promise<ActiveSymbol[]> {
-    const response = await this.send({ active_symbols: "brief", product_type: "basic" })
+    const response = await this.send({ active_symbols: "brief" })
     return response.active_symbols
   }
 
@@ -331,8 +343,8 @@ export class DerivAPIClient {
       validatedParams.duration_unit = "t" // Force ticks for digit contracts
     }
 
-    // Ensure symbol is a valid continuous index
-    if (!validatedParams.symbol || validatedParams.symbol.length === 0) {
+    // Ensure symbol is valid - using underlying_symbol in new API
+    if (!validatedParams.underlying_symbol || validatedParams.underlying_symbol.length === 0) {
       throw new Error("Invalid symbol: Symbol cannot be empty")
     }
 
@@ -364,7 +376,8 @@ export class DerivAPIClient {
   }
 
   async getTick(symbol: string): Promise<TickData> {
-    const response = await this.send({ ticks: symbol })
+    const response = await this.send({ ticks: symbol, subscribe: 0 })
+    // New API requires tick object, so we can safely access it
     return response.tick
   }
 
